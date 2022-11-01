@@ -1,4 +1,5 @@
 import os
+import logging
 import pyperclip    # 
 import numpy as np
 from tkinter import ttk
@@ -16,9 +17,6 @@ from tkinter.messagebox import showinfo
 
 class App(tk.Tk):
     """App class within which all the events and widgets take place.
-
-    Args:
-        tk (_type_): _description_
     """
 
     def __init__(self):
@@ -40,6 +38,12 @@ class App(tk.Tk):
             initialdir="/",
         )
         print(f"{self.dirname = }")
+
+        # Kill the app if no directory is specified.
+        if not self.dirname:
+            logging.warning("No directory specified. Closing the app...")
+            self.destroy()
+            return
 
         self.open_dir()
 
@@ -118,7 +122,7 @@ class App(tk.Tk):
         return tree
 
     def item_selected(self, event):
-        """Function to execute when a particular item in the Treeview is selected. It reads the path, open the `npy` file, and plots it as an image in matplotlib plot.
+        """Function to execute when a particular item in the Treeview is selected. It reads the path, open the `npy` file, and plots it as an image in matplotlib plot. This sample function only works for a numpy 2d array with 1 or 3 channels (anything that is accepted by matplotlib.pyplot.imshow()).
 
         Args:
             event: event when the function is to be triggered.
@@ -152,7 +156,6 @@ class App(tk.Tk):
         toolbar = NavigationToolbar2Tk(canvas, toolbarFrame)
         toolbar.update()
         self.update()
-
 
 
 def main():
