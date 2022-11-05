@@ -1,7 +1,8 @@
 import os
 import logging
-import pyperclip    # 
+import pyperclip    # used to copy filename to clipboard
 import numpy as np
+import pandas as pd
 from tkinter import ttk
 import tkinter as tk
 import matplotlib
@@ -14,22 +15,55 @@ from matplotlib.backends.backend_tkagg import (
 from matplotlib import pyplot as plt
 from tkinter.messagebox import showinfo
 
+from typing import Callable
+
 
 class App(tk.Tk):
     """App class within which all the events and widgets take place.
     """
 
-    def __init__(self):
+    def __init__(
+        self, 
+        window_title: str="Custom File Viewer",
+        read_and_plot_func: Callable=None, 
+        **kwargs,
+    ):
         super().__init__()
 
-        self.title('NPY Image Viewer')
+        self.title(window_title)
         self.geometry('620x200')
+
+        self.kwargs = kwargs
+        self.kwargs["figsize"] = self.kwargs.get("figsize", (5, 5))
+        self.kwargs["dpi"] = self.kwargs.get("dpi", 100)
 
         dir_btn = tk.Button(self, text='Open Directory', bd='5',
                           command=self.get_dirname)
         dir_btn.grid(row=0, sticky=tk.E+tk.W)
+
+        # if open_file_func:
+        #     self.open_file = open_file_func
+        # else:
+        #     self.open_file = np.load
+
+        # if plot_file_func:
+        #     self.plot_file = plot_file_func
+        # else:
+        #     self.plot_file = 
+
+        if read_and_plot_func:
+            self.read_and_plot = read_and_plot_func
+        else:
+            self.read_and_plot = self.read_and_plot_npy_img
         
     
+    def read_and_plot_npy_img(self, filepath, ax):
+        img = np.load(filepath).squeeze()
+        ax.imshow(img)
+
+        return img, ax
+
+
     def get_dirname(self):
         """Get the directory name using a GUI pop-up.
         """
@@ -56,12 +90,13 @@ class App(tk.Tk):
         self.update()
 
         # the figure that will contain the plot
-        self.fig = Figure(figsize=(5, 5), dpi=100)
+        self.fig = Figure(figsize=self.kwargs["figsize"], dpi=self.kwargs["dpi"])
         self.plot1 = self.fig.add_subplot(111)
 
         fig_shape = self.fig.get_size_inches() * self.fig.dpi
-        self.new_height = int(fig_shape[0] + 42)    # 42 is for the NavigationToolbar
-        self.new_width = int(self.tree.winfo_width() + fig_shape[1])
+
+        self.new_height = int(fig_shape[1] + 84)    # 42 at the top for Open Dir button and 42 at the bottom for the NavigationToolbar
+        self.new_width = int(self.tree.winfo_width() + fig_shape[0])
 
         self.geometry(f"{self.new_width}x{self.new_height}")
 
@@ -113,7 +148,7 @@ class App(tk.Tk):
         scrollbar.grid(row=1, column=1, sticky='ns')
         # scrollbar.pack(side=tk.LEFT, expand=True, fill=tk.Y)
 
-        files = os.listdir(self.dirname)
+        files = sorted(os.listdir(self.dirname))
 
         # add data to the treeview
         for file_i in files:
@@ -133,10 +168,18 @@ class App(tk.Tk):
         item = self.tree.item(selected_item)
         record = item['values'][0]
 
-        img = np.load(os.path.join(self.dirname, record)).squeeze()
+        self.plot1.clear()
+        # self.plot1.get_figure().clear()
+        img, self.plot1 = self.read_and_plot(
+            filepath=os.path.join(self.dirname, record), 
+            ax=self.plot1,
+        )
 
-        # plotting the graph
-        self.plot1.imshow(img)
+        # img = np.load(os.path.join(self.dirname, record)).squeeze()
+
+        # # plotting the graph
+        # self.plot1.imshow(img)
+        
         self.plot1.set_title(record)
     
         # creating the Tkinter canvas
