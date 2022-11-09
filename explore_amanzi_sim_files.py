@@ -52,10 +52,17 @@ def obsplot():
     filepath = "/Users/satyarth/Projects/LBNL/Haruko/utm_obs_plot/F-area_Well_Locations_Updated.csv"
     df = pd.read_csv(filepath)
 
-    df_D_bool = df.station_id.apply(lambda sid: "D" in sid)
-    df_D = df[df_D_bool]
+    # # Selecting sites containing "D" in the site ID (lower aquifer layers)
+    # df_D_bool = df.station_id.apply(lambda sid: "D" in sid)
+    # df_D = df[df_D_bool]
 
-    ys, xs = nad832srs(y=df_D.northing, x=df_D.easting)
+    # List of new sensor location station IDs
+    new_sensor_locs_filepath = "/Users/satyarth/Projects/LBNL/Haruko/utm_obs_plot/new_sensor_locations.csv"
+    ns_df = pd.read_csv(new_sensor_locs_filepath)
+    df_ns_bool = df.station_id.apply(lambda sid: sid in list(ns_df.sites))
+    df_queried = df[df_ns_bool]
+
+    ys, xs = nad832srs(y=df_queried.northing, x=df_queried.easting)
 
     return (xs, ys)
 
